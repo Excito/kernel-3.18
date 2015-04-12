@@ -1,0 +1,10 @@
+0001-Enable-usage-of-.kernelvariables.patch
+0002-remove-debian-packaging.patch
+0100-Excito-B3-board.patch
+0101-Settings-for-marvell-88e1116.patch
+0102-Marvell-reverse-led-fix.patch
+0200-Excito-B2-board.patch
+0201-Ath-regd-optional.patch
+0202-vsc8601_and_clockskewfix.patch
+0300-Excito-B3-config.patch
+0400-Excito-B2-config.patch

@@ -1,0 +1,43 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -20,6 +20,13 @@
+ 	---help---
+ 	  Currently has a driver for the 88E1011S
+ 	
++config MARVELL_PHY_REVERSE
++	depends on MARVELL_PHY
++	bool "Reverse LED activity"
++	---help---
++	  Reverse link and activity LEDS on
++	  88E1016R and 88E1018R
++
+ config DAVICOM_PHY
+ 	tristate "Drivers for Davicom PHYs"
+ 	---help---
+--- a/drivers/net/phy/marvell.c
++++ b/drivers/net/phy/marvell.c
+@@ -499,12 +499,24 @@
+ 		return err;
+ 
+ 	/* Adjust LED Control */
++#ifdef CONFIG_MARVELL_PHY_REVERSE
++	printk(KERN_NOTICE "Marvell PHY apply reverse LED fix");
++
++	err = phy_write(phydev, 0x10, 0x0071);
++	if (err < 0)
++		return err;
++
++	err = phy_write(phydev, 0x11, 0x4415);
++	if (err < 0)
++		return err;
++#else
+ 	if (phydev->dev_flags & MARVELL_PHY_M1118_DNS323_LEDS)
+ 		err = phy_write(phydev, 0x10, 0x1100);
+ 	else
+ 		err = phy_write(phydev, 0x10, 0x021e);
+ 	if (err < 0)
+ 		return err;
++#endif
+ 
+ 	err = marvell_of_reg_init(phydev);
+ 	if (err < 0)
