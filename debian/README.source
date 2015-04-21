@@ -3,4 +3,4 @@ This source package contains the linux kernel plus patches for the Excito platfo
 The reason to create a totally new package is because the default linux package is way too complex to maintain outside the normal debian maintenance, 
 and the system to create patched kernels using the normal tools will not create usabel source packages for archival use.
 
-The package is created with cross compiling in mind, use Excito provided toolchains for debian wheezy.
+The package is created with cross compiling in mind.

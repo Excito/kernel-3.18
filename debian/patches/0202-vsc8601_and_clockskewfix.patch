@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -48,9 +48,14 @@
+@@ -63,9 +63,14 @@
  	  Currently supports the cis8204
  
  config VITESSE_PHY
@@ -9,7 +9,7 @@
 -          Currently supports the vsc8244
 +	tristate "Drivers for the Vitesse PHYs"
 +	---help---
-+	  Currently supports the vsc8244, vsc8601
++	  Currently supports the vsc8244 and vsc8601
 +
 +config VITESSE_PHY_8601_SKEW
 +	bool "Enable skew timing to vsc8601"
@@ -20,7 +20,7 @@
  	tristate "Drivers for SMSC PHYs"
 --- a/drivers/net/phy/vitesse.c
 +++ b/drivers/net/phy/vitesse.c
-@@ -26,6 +26,11 @@
+@@ -31,6 +31,11 @@
  #define MII_VSC8244_EXTCON1_TX_SKEW	0x0800
  #define MII_VSC8244_EXTCON1_RX_SKEW	0x0200
  
@@ -32,7 +32,15 @@
  /* Vitesse Interrupt Mask Register */
  #define MII_VSC8244_IMASK		0x19
  #define MII_VSC8244_IMASK_IEN		0x8000
-@@ -98,6 +103,30 @@
+@@ -69,6 +74,7 @@
+ #define PHY_ID_VSC8662			0x00070660
+ #define PHY_ID_VSC8221			0x000fc550
+ #define PHY_ID_VSC8211			0x000fc4b0
++#define PHY_ID_VSC8601			0x00070420
+ 
+ MODULE_DESCRIPTION("Vitesse PHY driver");
+ MODULE_AUTHOR("Kriston Carson");
+@@ -110,6 +116,31 @@
  	return err;
  }
  
@@ -42,7 +50,7 @@
 +	int extcon;
 +
 +	err = phy_write(phydev, MII_VSC8244_AUX_CONSTAT,
-+					MII_VSC8244_AUXCONSTAT_INIT);
++			MII_VSC8244_AUXCONSTAT_INIT);
 +
 +	if (err < 0)
 +		return err;
@@ -60,18 +68,19 @@
 +	return err;
 +}
 +
++
  static int vsc824x_ack_interrupt(struct phy_device *phydev)
  {
  	int err = 0;
-@@ -153,6 +182,21 @@
- 	.driver 	= { .owner = THIS_MODULE,},
- };
- 
-+/* Vitesse 8601 */
-+static struct phy_driver vsc8601_driver = {
-+	.phy_id         = 0x00070420,
-+	.name           = "Vitesse VSC8601",
+@@ -309,6 +340,19 @@
+ 	.ack_interrupt	= &vsc824x_ack_interrupt,
+ 	.config_intr	= &vsc82xx_config_intr,
+ 	.driver		= { .owner = THIS_MODULE,},
++}, {
++	/* Vitesse 8601 */
++	.phy_id         = PHY_ID_VSC8601,
 +	.phy_id_mask    = 0x000ffff8,
++	.name           = "Vitesse VSC8601",
 +	.features       = PHY_GBIT_FEATURES,
 +	.flags          = PHY_HAS_INTERRUPT,
 +	.config_init    = &vsc8601_config_init,
@@ -80,34 +89,14 @@
 +	.ack_interrupt  = &vsc824x_ack_interrupt,
 +	.config_intr    = &vsc82xx_config_intr,
 +	.driver         = { .owner = THIS_MODULE,},
-+};
-+
- static int vsc8221_config_init(struct phy_device *phydev)
- {
- 	int err;
-@@ -187,9 +231,17 @@
- 	err = phy_driver_register(&vsc8244_driver);
- 	if (err < 0)
- 		return err;
-+
- 	err = phy_driver_register(&vsc8221_driver);
- 	if (err < 0)
- 		phy_driver_unregister(&vsc8244_driver);
-+
-+	err = phy_driver_register(&vsc8601_driver);
-+	if (err < 0){
-+		phy_driver_unregister(&vsc8244_driver);
-+		phy_driver_unregister(&vsc8221_driver);
-+	}
-+
- 	return err;
- }
+ } };
  
-@@ -197,6 +249,7 @@
- {
- 	phy_driver_unregister(&vsc8244_driver);
- 	phy_driver_unregister(&vsc8221_driver);
-+	phy_driver_unregister(&vsc8601_driver);
- }
+ static int __init vsc82xx_init(void)
+@@ -333,6 +377,7 @@
+ 	{ PHY_ID_VSC8662, 0x000ffff0 },
+ 	{ PHY_ID_VSC8221, 0x000ffff0 },
+ 	{ PHY_ID_VSC8211, 0x000ffff0 },
++	{ PHY_ID_VSC8601, 0x000ffff8 },
+ 	{ }
+ };
  
- module_init(vsc82xx_init);

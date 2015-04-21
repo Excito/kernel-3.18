@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -20,6 +20,13 @@
+@@ -35,6 +35,13 @@
  	---help---
  	  Currently has a driver for the 88E1011S
  	
@@ -16,7 +16,7 @@
  	---help---
 --- a/drivers/net/phy/marvell.c
 +++ b/drivers/net/phy/marvell.c
-@@ -499,12 +499,24 @@
+@@ -577,12 +577,24 @@
  		return err;
  
  	/* Adjust LED Control */

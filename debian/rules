@@ -23,7 +23,12 @@ DEB_BUILD_ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 DEB_HOST_ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH)
 DEB_HOST_ARCH_CPU := $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
 DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+
+ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+	CROSS_COMPILE := $(DEB_HOST_GNU_TYPE)-
+endif
 KERNEL_ARCH := $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
+
 BUILD_DIR=debian/build
 
 export DEB_HOST_ARCH DEB_HOST_GNU_TYPE DEB_BUILD_ARCH
@@ -82,7 +87,7 @@ override_dh_auto_install: install_headers
 override_dh_auto_install:
 	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' INSTALL_MOD_PATH='$(CURDIR)/$(PACKAGE_DIR)' INSTALL_MOD_STRIP=1 modules_install
 	mkdir -p debian/$(PACKAGE)/boot
-	cp '$(SOURCE_DIR)'/arch/$(DEB_HOST_ARCH_CPU)/boot/uImage debian/$(PACKAGE)/boot
+	cp '$(SOURCE_DIR)'/uImage debian/$(PACKAGE)/boot
 	cp '$(SOURCE_DIR)'/.config $(PACKAGE_DIR)/boot/config-$(call REAL_VERSION)
 	cp '$(SOURCE_DIR)'/System.map $(PACKAGE_DIR)/boot/System.map-$(call REAL_VERSION)
 	find $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/ -mindepth 1 -maxdepth 1 \! -name kernel \! -name modules.order \! -name modules.builtin -exec rm {} \+
@@ -100,20 +105,17 @@ install_headers: SOURCE_DIR=$(BUILD_DIR)/source
 install_headers:
 	cd $(SOURCE_DIR); \
 		( \
-		echo Makefile; \
-		find . -path './scripts/*' -prune -o -path './Documentation/*' -prune -o -type f \( -name Makefile -o -name 'Kconfig*' \) -print; \
-		find arch/$(KERNEL_ARCH) -name 'module.lds' -print; \
-		find $$(find arch/$(KERNEL_ARCH) \( -name include -o -name scripts \) -type d -print) -print; \
-		find include -name 'asm*' -prune -o -print; \
-		find include/asm-generic -print; \
+		echo .kernelvariables; \
+		echo .config; \
+		echo arch/$(KERNEL_ARCH)/kernel/asm-offsets.s; \
+		echo Module.symvers; \
+		find include -type f; \
+		find $$(find arch/$(KERNEL_ARCH) \( -name include \) -type d -print) -print; \
 		) \
 		| \
 		cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
 
-	cp -a $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/include $(INSTALL_DIR)/arch/$(KERNEL_ARCH)
-	cp -a $(wildcard $(addprefix $(SOURCE_DIR)/,.config .kernel* Module.symvers include scripts)) $(INSTALL_DIR)
-
-	cp -a $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/kernel/asm-offsets.s $(INSTALL_DIR)/arch/$(KERNEL_ARCH)/kernel
+	cp -a scripts $(INSTALL_DIR)
 
 ifeq ($(DEB_HOST_ARCH),powerpc)
 	if [ -f $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o ]; then \
@@ -127,32 +129,32 @@ endif
 
 override_dh_auto_build: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_auto_build:
-	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)'
-	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' zImage
-# L2 cache patch
 ifeq ($(DEB_HOST_ARCH),armel)
-	mv '$(SOURCE_DIR)'/arch/arm/boot/zImage '$(SOURCE_DIR)'/arch/arm/boot/zImage.pre
-	echo -n -e \\x11\\x3f\\x3f\\xee > '$(SOURCE_DIR)'/arch/arm/boot/zImage
-	echo -n -e \\x01\\x35\\xc3\\xe3 >> '$(SOURCE_DIR)'/arch/arm/boot/zImage
-	echo -n -e \\x11\\x3f\\x2f\\xee >> '$(SOURCE_DIR)'/arch/arm/boot/zImage
-	echo -n -e \\x00\\x30\\xa0\\xe3 >> '$(SOURCE_DIR)'/arch/arm/boot/zImage
-	echo -n -e \\x17\\x3f\\x07\\xee >> '$(SOURCE_DIR)'/arch/arm/boot/zImage
-	cat '$(SOURCE_DIR)'/arch/arm/boot/zImage.pre >> '$(SOURCE_DIR)'/arch/arm/boot/zImage
-	rm '$(SOURCE_DIR)'/arch/arm/boot/zImage.pre
-endif
-	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' uImage
-ifeq ($(DEB_HOST_ARCH),powerpc)
-	$(call device_tree_compile, debian/dts/bubba.dts)
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) zImage
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) kirkwood-b3.dtb
+	cp $(SOURCE_DIR)/arch/arm/boot/zImage $(BUILD_DIR)
+	cp $(SOURCE_DIR)/arch/arm/boot/dts/kirkwood-b3.dtb $(BUILD_DIR)
+	debian/build_b3_uImage.sh $(BUILD_DIR) $(call REAL_VERSION)
+else ifeq ($(DEB_HOST_ARCH),powerpc)
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) vmlinux
+	$(CROSS_COMPILE)objcopy -O binary $(SOURCE_DIR)/vmlinux $(BUILD_DIR)/vmlinux.bin
+	$(CROSS_COMPILE)as -mregnames -me300 -a -o $(BUILD_DIR)/reloc_shim.o $(SOURCE_DIR)/arch/powerpc/boot/reloc_shim.S
+	$(CROSS_COMPILE)objcopy -O binary $(BUILD_DIR)/reloc_shim.o $(BUILD_DIR)/reloc_shim.bin
+	mkimage -A powerpc \
+        -O linux -T kernel -C none \
+        -a 0x02000000 -e 0x02000000 -n "Shim for linux-$(call REAL_VERSION)" \
+        -d $(BUILD_DIR)/reloc_shim.bin $(BUILD_DIR)/uImage
+	debian/finalize_b2_uImage.sh $(BUILD_DIR)
 	$(call device_tree_compile, debian/dts/8313E21.dts)
 endif
+	mv $(BUILD_DIR)/uImage $(SOURCE_DIR)
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) modules
 
-override_dh_clean: SOURCE_DIR=$(BUILD_DIR)/source
+
 override_dh_clean:
 	rm -f debian/dts/*.dtb
-	rm -rf $(SOURCE_DIR)
-	make clean
-	rm -rf include/config/ include/generated/
-	rm -f scripts/basic/docproc scripts/basic/fixdep scripts/kconfig/conf scripts/kconfig/lex.zconf.c scripts/kconfig/zconf.hash.c scripts/kconfig/zconf.tab.c scripts/kconfig/zconf.lex.c
+	rm -rf $(BUILD_DIR)
+	+make clean
 	dh_clean $@
 
 override_dh_auto_clean: SOURCE_DIR=$(BUILD_DIR)/source

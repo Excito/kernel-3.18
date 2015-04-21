@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -195,46 +195,6 @@
+@@ -251,42 +251,6 @@
  ARCH		?= $(SUBARCH)
  CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
  
@@ -40,22 +40,18 @@
 -# Where to locate arch specific headers
 -hdr-arch  := $(SRCARCH)
 -
--ifeq ($(ARCH),m68knommu)
--       hdr-arch  := m68k
--endif
--
  KCONFIG_CONFIG	?= .config
  export KCONFIG_CONFIG
  
-@@ -354,6 +314,47 @@
+@@ -378,6 +342,43 @@
  AFLAGS_KERNEL	=
  CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
  
 +-include $(obj)/.kernelvariables
 +
 +# Architecture as present in compile.h
-+UTS_MACHINE 	:= $(ARCH)
-+SRCARCH 	:= $(ARCH)
++UTS_MACHINE     := $(ARCH)
++SRCARCH         := $(ARCH)
 +
 +# Additional ARCH settings for x86
 +ifeq ($(ARCH),i386)
@@ -67,31 +63,27 @@
 +
 +# Additional ARCH settings for sparc
 +ifeq ($(ARCH),sparc32)
-+       SRCARCH := sparc
++        SRCARCH := sparc
 +endif
 +ifeq ($(ARCH),sparc64)
-+       SRCARCH := sparc
++        SRCARCH := sparc
 +endif
 +
 +# Additional ARCH settings for sh
 +ifeq ($(ARCH),sh64)
-+       SRCARCH := sh
++        SRCARCH := sh
 +endif
 +
 +# Additional ARCH settings for tile
 +ifeq ($(ARCH),tilepro)
-+       SRCARCH := tile
++        SRCARCH := tile
 +endif
 +ifeq ($(ARCH),tilegx)
-+       SRCARCH := tile
++        SRCARCH := tile
 +endif
 +
 +# Where to locate arch specific headers
 +hdr-arch  := $(SRCARCH)
-+
-+ifeq ($(ARCH),m68knommu)
-+       hdr-arch  := m68k
-+endif
  
- # Use LINUXINCLUDE when you must reference the include/ directory.
- # Needed to be compatible with the O= option
+ # Use USERINCLUDE when you must reference the UAPI directories only.
+ USERINCLUDE    := \

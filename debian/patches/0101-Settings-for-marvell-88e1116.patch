@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/marvell.c
 +++ b/drivers/net/phy/marvell.c
-@@ -757,6 +757,19 @@
+@@ -948,6 +948,19 @@
  		.driver = { .owner = THIS_MODULE },
  	},
  	{
@@ -20,14 +20,14 @@
  		.phy_id = MARVELL_PHY_ID_88E1118,
  		.phy_id_mask = MARVELL_PHY_ID_MASK,
  		.name = "Marvell 88E1118",
-@@ -870,6 +883,7 @@
- 	{ 0x01410c90, 0xfffffff0 },
- 	{ 0x01410cc0, 0xfffffff0 },
- 	{ 0x01410e10, 0xfffffff0 },
-+	{ 0x01410e40, 0xfffffff0 },
- 	{ 0x01410cb0, 0xfffffff0 },
- 	{ 0x01410cd0, 0xfffffff0 },
- 	{ 0x01410e50, 0xfffffff0 },
+@@ -1090,6 +1103,7 @@
+ 	{ MARVELL_PHY_ID_88E1101, MARVELL_PHY_ID_MASK },
+ 	{ MARVELL_PHY_ID_88E1112, MARVELL_PHY_ID_MASK },
+ 	{ MARVELL_PHY_ID_88E1111, MARVELL_PHY_ID_MASK },
++	{ MARVELL_PHY_ID_88E1116, MARVELL_PHY_ID_MASK },
+ 	{ MARVELL_PHY_ID_88E1118, MARVELL_PHY_ID_MASK },
+ 	{ MARVELL_PHY_ID_88E1121R, MARVELL_PHY_ID_MASK },
+ 	{ MARVELL_PHY_ID_88E1145, MARVELL_PHY_ID_MASK },
 --- a/include/linux/marvell_phy.h
 +++ b/include/linux/marvell_phy.h
 @@ -8,6 +8,7 @@
