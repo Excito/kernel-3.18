@@ -15,7 +15,7 @@ Description: The linux kernel for the Excito platforms
 Package: bubba3-kernel-headers-armel
 Architecture: armel
 Provides: linux-headers
-Depends: ${misc:Depends}
+Depends: ${misc:Depends} gcc-4.9
 Description: Header files for Excito modified kernel (armel)
  This package provides the architecture-specific kernel header files for
  Linux kernel modified by excito.
@@ -23,7 +23,7 @@ Description: Header files for Excito modified kernel (armel)
 Package: bubba3-kernel-headers-powerpc
 Architecture: powerpc
 Provides: linux-headers
-Depends: ${misc:Depends}
+Depends: ${misc:Depends} gcc-4.6
 Description: Header files for Excito modified kernel (powerpc)
  This package provides the architecture-specific kernel header files for
  Linux kernel modified by excito.
