@@ -1,0 +1,44 @@
+--- a/arch/arm/mach-mvebu/Kconfig
++++ b/arch/arm/mach-mvebu/Kconfig
+@@ -109,4 +109,11 @@
+ 	  Say 'Y' here if you want your kernel to support the
+ 	  LaCie 2Big and 5Big Network v2
+ 
++config KIRKWOOD_ALWAYS_RESTART
++	bool "Restart board when powering off kernel"
++	depends on MACH_KIRKWOOD
++	help
++	  Say 'Y' here if you want your kernel to restart
++	  when asked to power off.
++
+ endif
+--- a/arch/arm/kernel/process.c
++++ b/arch/arm/kernel/process.c
+@@ -190,6 +190,13 @@
+ 	local_irq_disable();
+ 	smp_send_stop();
+ 
++#ifdef CONFIG_KIRKWOOD_ALWAYS_RESTART
++	if (arm_pm_restart)
++		arm_pm_restart(reboot_mode, NULL);
++	else
++		do_kernel_restart(NULL);
++#endif
++
+ 	local_irq_disable();
+ 	while (1);
+ }
+@@ -205,6 +212,13 @@
+ 	local_irq_disable();
+ 	smp_send_stop();
+ 
++#ifdef CONFIG_KIRKWOOD_ALWAYS_RESTART
++	if (arm_pm_restart)
++		arm_pm_restart(reboot_mode, NULL);
++	else
++		do_kernel_restart(NULL);
++#endif
++
+ 	if (pm_power_off)
+ 		pm_power_off();
+ }

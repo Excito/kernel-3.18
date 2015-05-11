@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for f in modules.{alias,dep,symbols}{,.bin} \
+         modules.{builtin.bin,devname,softdep} ; do
+	rm -f /lib/modules/@VERSION@/$f
+done

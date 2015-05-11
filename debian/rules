@@ -11,7 +11,6 @@ export DH_VERBOSE=1
 
 UPLOADER  := $(shell dpkg-parsechangelog | sed -ne 's,^Maintainer: .[^<]*<\([^>]*\)>,\1,p')
 
-
 DEB_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' ')
 DEB_NOEPOCH_VERSION := $(shell echo $(DEB_VERSION) | cut -d: -f2-)
 DEB_UPSTREAM_VERSION := $(shell echo $(DEB_NOEPOCH_VERSION) | sed 's/-[^-]*$$//')
@@ -19,15 +18,13 @@ DEB_REVISION :=  $(shell echo $(DEB_NOEPOCH_VERSION) | cut -d- -f2-)
 
 ABINAME=$(DEB_NOEPOCH_VERSION)
 UPSTREAMVERSION=$(DEB_UPSTREAM_VERSION)
-DEB_BUILD_ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
-DEB_HOST_ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH)
-DEB_HOST_ARCH_CPU := $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
-DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+
+include /usr/share/dpkg/architecture.mk
 
 ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
 	CROSS_COMPILE := $(DEB_HOST_GNU_TYPE)-
 endif
-KERNEL_ARCH := $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
+KERNEL_ARCH := $(DEB_HOST_GNU_CPU)
 
 BUILD_DIR=debian/build
 
@@ -38,17 +35,17 @@ setup_env += DISTRIBUTION_OFFICIAL_BUILD=1 DISTRIBUTION_UPLOADER=$(UPLOADER) DIS
 
 MAKE_CLEAN = $(setup_env) $(MAKE)
 
+PACKAGE = bubba3-kernel
+HEADER_PACKAGE := bubba3-kernel-headers-$(DEB_HOST_ARCH)
+
 ifeq ($(DEB_HOST_ARCH),armel)
-	PACKAGE=bubba3-kernel
-	HEADER_PACKAGE=bubba3-kernel-headers-armel
 	CONFIG=bubba3_defconfig
 else ifeq ($(DEB_HOST_ARCH),powerpc)
-	PACKAGE=bubba3-kernel
-	HEADER_PACKAGE=bubba3-kernel-headers-powerpc
 	CONFIG=bubbatwo_defconfig
 endif
 
 PACKAGE_DIR=debian/$(PACKAGE)
+
 %:
 	+dh $@ --parallel
 
@@ -60,72 +57,29 @@ define device_tree_compile
 dtc -b 0 -V 17 -R 4 -S 0x3000 -I dts -O dtb -f $(strip $(1)) > $(addsuffix .dtb,$(basename $(strip $(1))))
 endef
 
+
 override_dh_auto_configure: SOURCE_FILES = $(filter-out debian .git .pc, $(wildcard * .[^.]*))
-override_dh_auto_configure: SOURCE_DIR=$(BUILD_DIR)/source
+override_dh_auto_configure: SOURCE_DIR = $(BUILD_DIR)/source
 override_dh_auto_configure: 
-	rm -rf '$(SOURCE_DIR)'
-	mkdir -p '$(SOURCE_DIR)'
-	cp -al $(SOURCE_FILES) '$(SOURCE_DIR)'
-	chmod -R u+rw,go=rX '$(SOURCE_DIR)'
-	touch '$(SOURCE_DIR)/.scmversion'
+	rm -rf $(SOURCE_DIR)
+	mkdir -p $(SOURCE_DIR)
+	cp -al $(SOURCE_FILES) $(SOURCE_DIR)
+	chmod -R u+rw,go=rX $(SOURCE_DIR)
+	touch $(SOURCE_DIR)/.scmversion
 
-	echo '-$(DEB_REVISION)' > '$(SOURCE_DIR)/localversion'
-	echo 'override ARCH = $(DEB_HOST_ARCH_CPU)' >> '$(SOURCE_DIR)/.kernelvariables'
-	echo 'override KERNELRELEASE = $(ABINAME)' >> '$(SOURCE_DIR)/.kernelvariables'
+	echo '-$(DEB_REVISION)' > $(SOURCE_DIR)/localversion
+	echo 'override ARCH = $(DEB_HOST_ARCH_CPU)' >> $(SOURCE_DIR)/.kernelvariables
+	echo 'override KERNELRELEASE = $(ABINAME)'  >> $(SOURCE_DIR)/.kernelvariables
 ifneq (,$(findstring ccache,$(DEB_BUILD_OPTIONS)))
-	echo 'CCACHE = ccache' >> '$(SOURCE_DIR)/.kernelvariables'
-	echo 'CC =ccache $$(CROSS_COMPILE)gcc' >> '$(SOURCE_DIR)/.kernelvariables'
+	echo 'CCACHE = ccache' >> $(SOURCE_DIR)/.kernelvariables
+	echo 'CC = ccache $(CROSS_COMPILE)gcc' >> $(SOURCE_DIR)/.kernelvariables
 endif
-ifneq ($(DEB_BUILD_ARCH),$(DEB_HOST_ARCH))
-	echo 'override CROSS_COMPILE = $(DEB_HOST_GNU_TYPE)-' >> '$(SOURCE_DIR)/.kernelvariables'
-endif
-	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' $(CONFIG)
-	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' prepare
+	echo 'ifneq ($$(DEB_BUILD_ARCH),$$(DEB_HOST_ARCH))' >> $(SOURCE_DIR)/.kernelvariables
+	echo 'override CROSS_COMPILE = $$(DEB_HOST_GNU_TYPE)-' >> $(SOURCE_DIR)/.kernelvariables
+	echo 'endif' >> $(SOURCE_DIR)/.kernelvariables
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) $(CONFIG)
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) prepare
 
-override_dh_auto_install: SOURCE_DIR=$(BUILD_DIR)/source
-override_dh_auto_install: install_headers
-override_dh_auto_install:
-	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' INSTALL_MOD_PATH='$(CURDIR)/$(PACKAGE_DIR)' INSTALL_MOD_STRIP=1 modules_install
-	mkdir -p debian/$(PACKAGE)/boot
-	cp '$(SOURCE_DIR)'/uImage debian/$(PACKAGE)/boot
-	cp '$(SOURCE_DIR)'/.config $(PACKAGE_DIR)/boot/config-$(call REAL_VERSION)
-	cp '$(SOURCE_DIR)'/System.map $(PACKAGE_DIR)/boot/System.map-$(call REAL_VERSION)
-	find $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/ -mindepth 1 -maxdepth 1 \! -name kernel \! -name modules.order \! -name modules.builtin -exec rm {} \+
-	rm $(PACKAGE_DIR)/lib/firmware -rf	
-ifeq ($(DEB_HOST_ARCH),powerpc)
-	cp debian/dts/*.dtb debian/$(PACKAGE)/boot
-endif
-
-install_headers: PACKAGE_NAME = $(HEADER_PACKAGE)
-install_headers: BASE_DIR = /usr/src/$(PACKAGE_NAME)
-install_headers: PACKAGE_DIR = debian/$(PACKAGE_NAME)
-install_headers: INSTALL_DIR = $(PACKAGE_DIR)/$(BASE_DIR)
-install_headers: DH_OPTIONS = -p$(PACKAGE_NAME) -a$(DEB_HOST_ARCH)
-install_headers: SOURCE_DIR=$(BUILD_DIR)/source
-install_headers:
-	cd $(SOURCE_DIR); \
-		( \
-		echo .kernelvariables; \
-		echo .config; \
-		echo arch/$(KERNEL_ARCH)/kernel/asm-offsets.s; \
-		echo Module.symvers; \
-		find include -type f; \
-		find $$(find arch/$(KERNEL_ARCH) \( -name include \) -type d -print) -print; \
-		) \
-		| \
-		cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
-
-	cp -a scripts $(INSTALL_DIR)
-
-ifeq ($(DEB_HOST_ARCH),powerpc)
-	if [ -f $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o ]; then \
-		mkdir $(INSTALL_DIR)/arch/$(KERNEL_ARCH)/lib; \
-		cp -a $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o $(INSTALL_DIR)/arch/$(KERNEL_ARCH)/lib; \
-	fi
-endif
-
-	mkdir -p $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)
-	ln -s /usr/src/$(PACKAGE_NAME) $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/build
 
 override_dh_auto_build: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_auto_build:
@@ -149,14 +103,67 @@ else ifeq ($(DEB_HOST_ARCH),powerpc)
 endif
 	mv $(BUILD_DIR)/uImage $(SOURCE_DIR)
 	+$(MAKE_CLEAN) -C $(SOURCE_DIR) modules
+	sed 's/@VERSION@/$(call REAL_VERSION)/g' < debian/bubba3-kernel.prerm.in > debian/bubba3-kernel.prerm
 
 
+override_dh_auto_install: SOURCE_DIR=$(BUILD_DIR)/source
+override_dh_auto_install: install_headers
+override_dh_auto_install:
+	+$(MAKE_CLEAN) -C $(SOURCE_DIR) INSTALL_MOD_PATH=$(CURDIR)/$(PACKAGE_DIR) INSTALL_MOD_STRIP=1 modules_install
+	mkdir -p $(PACKAGE_DIR)/boot
+	cp $(SOURCE_DIR)/uImage $(PACKAGE_DIR)/boot
+	cp $(SOURCE_DIR)/.config $(PACKAGE_DIR)/boot/config-$(call REAL_VERSION)
+	cp $(SOURCE_DIR)/System.map $(PACKAGE_DIR)/boot/System.map-$(call REAL_VERSION)
+	find $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/ \
+		-mindepth 1 -maxdepth 1 \
+		\! -name kernel \! -name modules.order \
+		\! -name modules.builtin \
+		-exec rm {} \+
+	rm $(PACKAGE_DIR)/lib/firmware -rf	
+ifeq ($(DEB_HOST_ARCH),powerpc)
+	cp debian/dts/*.dtb debian/$(PACKAGE)/boot
+endif
+
+install_headers: PACKAGE_NAME = $(HEADER_PACKAGE)
+install_headers: BASE_DIR = /usr/src/$(PACKAGE_NAME)
+install_headers: PACKAGE_DIR = debian/$(PACKAGE_NAME)
+install_headers: INSTALL_DIR = $(PACKAGE_DIR)/$(BASE_DIR)
+install_headers: DH_OPTIONS = -p$(PACKAGE_NAME) -a$(DEB_HOST_ARCH)
+install_headers: SOURCE_DIR=$(BUILD_DIR)/source
+install_headers:
+	cd $(SOURCE_DIR); \
+		( \
+		echo Makefile; \
+		echo .kernelvariables; \
+		echo .config; \
+		echo arch/$(KERNEL_ARCH)/kernel/asm-offsets.s; \
+		echo Module.symvers; \
+		find include -type f; \
+		find $$(find arch/$(KERNEL_ARCH) \( -name include \) -type d -print) -print; \
+		) \
+		| \
+		cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
+	
+	cp -a scripts $(INSTALL_DIR)
+
+ifeq ($(DEB_HOST_ARCH),powerpc)
+	if [ -f $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o ]; then \
+		mkdir $(INSTALL_DIR)/arch/$(KERNEL_ARCH)/lib; \
+		cp -a $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o $(INSTALL_DIR)/arch/$(KERNEL_ARCH)/lib; \
+	fi
+endif
+
+	mkdir -p $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)
+	ln -s /usr/src/$(PACKAGE_NAME) $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/build
+
+override_dh_clean: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_clean:
+	rm -f debian/bubba3-kernel.prerm
 	rm -f debian/dts/*.dtb
 	rm -rf $(BUILD_DIR)
-	+make clean
 	dh_clean $@
 
 override_dh_auto_clean: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_auto_clean:
+	+ARCH=$(DEB_HOST_ARCH_CPU) make mrproper
 	+test ! -e $(SOURCE_DIR) || $(MAKE_CLEAN) -C '$(SOURCE_DIR)' clean
