@@ -14,7 +14,7 @@
  endif
 --- a/arch/arm/kernel/process.c
 +++ b/arch/arm/kernel/process.c
-@@ -190,6 +190,13 @@
+@@ -196,6 +196,13 @@
  	local_irq_disable();
  	smp_send_stop();
  
@@ -28,7 +28,7 @@
  	local_irq_disable();
  	while (1);
  }
-@@ -205,6 +212,13 @@
+@@ -211,6 +218,13 @@
  	local_irq_disable();
  	smp_send_stop();
  
