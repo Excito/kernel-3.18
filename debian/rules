@@ -100,6 +100,7 @@ else ifeq ($(DEB_HOST_ARCH),powerpc)
         -d $(BUILD_DIR)/reloc_shim.bin $(BUILD_DIR)/uImage
 	debian/finalize_b2_uImage.sh $(BUILD_DIR)
 	$(call device_tree_compile, debian/dts/8313E21.dts)
+	$(call device_tree_compile, debian/dts/bubba.dts)
 endif
 	mv $(BUILD_DIR)/uImage $(SOURCE_DIR)
 	+$(MAKE_CLEAN) -C $(SOURCE_DIR) modules

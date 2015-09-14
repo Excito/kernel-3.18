@@ -1,3 +1,9 @@
+linux (1:3.18.21-2) UNRELEASED; urgency=medium
+
+  * Re-added rev 1 Bubba|2 DTS file see http://forum.excito.com/viewtopic.php?f=7&t=5821
+
+ -- Charles Leclerc <leclerc.charles@gmail.com>  Sun, 13 Sep 2015 21:32:35 -0400
+
 linux (1:3.18.21-1) jessie; urgency=medium
 
   * New upstream version
