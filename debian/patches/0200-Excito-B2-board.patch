@@ -26,7 +26,7 @@
  obj-$(CONFIG_MPC836x_MDS)	+= mpc836x_mds.o
 --- /dev/null
 +++ b/arch/powerpc/platforms/83xx/bubbatwo.c
-@@ -0,0 +1,499 @@
+@@ -0,0 +1,497 @@
 +/*
 + * Excito BUBBA|TWO driver.
 + *
@@ -136,8 +136,6 @@
 +		printk(KERN_DEBUG "BUBBATWO: Invoking usermodehelper");
 +		ret=call_usermodehelper (argv[0], argv, envp, UMH_WAIT_PROC);
 +		kfree (envp);
-+		b2_led_blink(LED_DEFAULT_FREQ);
-+
 +	} else {
 +		printk(KERN_DEBUG "BUBBATWO: Already invoked shutdown");
 +	}
