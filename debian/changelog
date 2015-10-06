@@ -1,3 +1,10 @@
+linux (1:3.18.22-1) jessie; urgency=medium
+
+  * New upstream version 
+  * Re-added CONFIG_KEYBOARD_GPIO in b3 config for bubba-buttond
+
+ -- Charles Leclerc <leclerc.charles@gmail.com>  Mon, 05 Oct 2015 18:51:24 -0400
+
 linux (1:3.18.21-2) jessie; urgency=medium
 
   * Re-added rev 1 Bubba|2 DTS file see http://forum.excito.com/viewtopic.php?f=7&t=5821

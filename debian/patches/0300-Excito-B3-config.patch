@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/configs/bubba3_defconfig
-@@ -0,0 +1,727 @@
+@@ -0,0 +1,728 @@
 +# CONFIG_LOCALVERSION_AUTO is not set
 +CONFIG_SYSVIPC=y
 +CONFIG_POSIX_MQUEUE=y
@@ -456,7 +456,8 @@
 +# CONFIG_INPUT_MOUSEDEV is not set
 +CONFIG_INPUT_EVDEV=m
 +CONFIG_INPUT_EVBUG=m
-+# CONFIG_INPUT_KEYBOARD is not set
++# CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=m
 +# CONFIG_INPUT_MOUSE is not set
 +CONFIG_INPUT_MISC=y
 +CONFIG_INPUT_ATI_REMOTE2=m
