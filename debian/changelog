@@ -1,6 +1,7 @@
 linux (1:3.18.22-2) UNRELEASED; urgency=medium
 
   * Small fix in bubbatwo driver
+  * Fix prerm/postinst script to remove depmod-generated files on removal/upgrade
 
  -- Charles Leclerc <leclerc.charles@gmail.com>  Tue, 06 Oct 2015 10:19:55 -0400
 

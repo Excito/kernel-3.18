@@ -9,3 +9,4 @@ bubba3-kernel-headers-armel/*
 bubba3-kernel-headers-powerpc/*
 bubba3-kernel/*
 bubba3-kernel.prerm
+bubba3-kernel.postinst

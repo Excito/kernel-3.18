@@ -105,7 +105,10 @@ endif
 	mv $(BUILD_DIR)/uImage $(SOURCE_DIR)
 	+$(MAKE_CLEAN) -C $(SOURCE_DIR) modules
 	sed 's/@VERSION@/$(call REAL_VERSION)/g' < debian/bubba3-kernel.prerm.in > debian/bubba3-kernel.prerm
+	sed 's/@VERSION@/$(call REAL_VERSION)/g' < debian/bubba3-kernel.postinst.in > debian/bubba3-kernel.postinst
 
+override_dh_installmodules:
+	dh_installmodules -n
 
 override_dh_auto_install: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_auto_install: install_headers
@@ -159,7 +162,7 @@ endif
 
 override_dh_clean: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_clean:
-	rm -f debian/bubba3-kernel.prerm
+	rm -f debian/bubba3-kernel.prerm debian/bubba3-kernel.postinst
 	rm -f debian/dts/*.dtb
 	rm -rf $(BUILD_DIR)
 	dh_clean $@

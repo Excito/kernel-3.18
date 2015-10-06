@@ -1,6 +1,17 @@
-#!/bin/bash
+#!/bin/sh
 
-for f in modules.{alias,dep,symbols}{,.bin} \
-         modules.{builtin.bin,devname,softdep,order} ; do
-	rm -f /lib/modules/@VERSION@/$f
-done
+set -e
+if [ "$1" = "remove" -o "$1" = "upgrade" ]; then
+	for f in modules.alias		\
+		 modules.alias.bin	\
+		 modules.dep		\
+		 modules.dep.bin	\
+		 modules.symbols	\
+		 modules.symbols.bin	\
+        	 modules.builtin.bin	\
+		 modules.devname	\
+		 modules.softdep
+	do
+		rm -f /lib/modules/@VERSION@/$f
+	done
+fi

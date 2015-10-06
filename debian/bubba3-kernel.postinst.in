@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+if [ "$1" = "configure" ] ; then
+	depmod -a -F /boot/System.map-@VERSION@ @VERSION@ || true
+fi
