@@ -1,3 +1,9 @@
+linux (1:3.18.22-3) UNRELEASED; urgency=medium
+
+  * Changed default value for bubbatwo led mode
+
+ -- Charles Leclerc <leclerc.charles@gmail.com>  Wed, 14 Oct 2015 21:38:11 -0400
+
 linux (1:3.18.22-2) jessie; urgency=medium
 
   * Small fix in bubbatwo driver

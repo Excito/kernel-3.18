@@ -432,8 +432,8 @@
 +		return -EINVAL;
 +	}
 +
-+	b2_data.mode=0;
-+	b2_data.freq=0x8000;
++	b2_data.mode=1;
++	b2_data.freq=LED_DEFAULT_FREQ;
 +	b2_data.invoked=0;
 +	b2_data.timer_added=0;
 +	b2_data.btn_state=0;
