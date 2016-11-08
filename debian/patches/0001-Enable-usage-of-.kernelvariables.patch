@@ -45,7 +45,7 @@
  
 @@ -378,6 +342,43 @@
  AFLAGS_KERNEL	=
- CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -fno-tree-loop-im
  
 +-include $(obj)/.kernelvariables
 +
