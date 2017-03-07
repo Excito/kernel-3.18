@@ -2,6 +2,7 @@ linux (1:3.18.48-1) UNRELEASED; urgency=medium
 
   * New upstream version
   * Added network namespaces modules requested in #1
+  * Added DVB modules - see http://forum.excito.com/viewtopic.php?f=9&t=5953
 
  -- Charles Leclerc <leclerc.charles@gmail.com>  Tue, 07 Mar 2017 14:21:17 -0500
 
