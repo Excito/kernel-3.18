@@ -2,7 +2,7 @@ Source: linux
 Section: kernel
 Priority: extra
 Maintainer: Charles Leclerc <leclerc.charles@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), device-tree-compiler, u-boot-tools
+Build-Depends: debhelper (>= 8.0.0), device-tree-compiler, u-boot-tools, bc
 Standards-Version: 3.9.2
 Homepage: http://kernel.org
 
